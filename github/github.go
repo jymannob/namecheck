@@ -27,6 +27,16 @@ type GitHub struct {
 	Client namecheck.Client
 }
 
+func init() {
+	gh := GitHub{
+		Client: http.DefaultClient,
+	}
+	const count = 20
+	for i := 0; i < count; i++ {
+		namecheck.Register(&gh)
+	}
+}
+
 func (g *GitHub) IsValid(username string) bool {
 	return isLongEnough(username) &&
 		isShortEnough(username) &&
