@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	platform       = "Twitter"
 	minLen         = 1
 	maxLen         = 15
 	illegalPattern = "twitter"
@@ -14,7 +15,9 @@ const (
 
 var legalRegexp = regexp.MustCompile("^[0-9A-Z_a-z]*$")
 
-func IsValid(username string) bool {
+type Twitter struct{}
+
+func (t *Twitter) IsValid(username string) bool {
 	return isLongEnough(username) &&
 		isShortEnough(username) &&
 		onlyContainsLegalChars(username) &&
@@ -35,4 +38,12 @@ func onlyContainsLegalChars(username string) bool {
 
 func containsNoIllegalPattern(username string) bool {
 	return !strings.Contains(strings.ToLower(username), illegalPattern)
+}
+
+func (t *Twitter) IsAvailable(username string) (bool, error) {
+	return false, nil
+}
+
+func (_ *Twitter) String() string {
+	return platform
 }
