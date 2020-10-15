@@ -12,6 +12,8 @@ import (
 )
 
 var count uint64
+var m = make(map[string]uint64)
+var mu sync.Mutex
 
 type result struct {
 	username  string
@@ -24,6 +26,7 @@ type result struct {
 func main() {
 	http.Handle("/check", http.HandlerFunc(handle))
 	http.Handle("/count", http.HandlerFunc(handleCount))
+	http.Handle("/details", http.HandlerFunc(handleDetails))
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
@@ -37,10 +40,26 @@ func handleCount(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, msg)
 }
 
+func handleDetails(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "text/plain")
+	var msg string
+	mu.Lock()
+	{
+		msg = fmt.Sprintf("%v", m)
+	}
+	mu.Unlock()
+	fmt.Fprintf(w, msg)
+}
+
 func handle(w http.ResponseWriter, r *http.Request) {
 	atomic.AddUint64(&count, 1)
 	w.Header().Add("Content-Type", "text/plain")
 	username := r.URL.Query().Get("username")
+	mu.Lock()
+	{
+		m[username]++
+	}
+	mu.Unlock()
 	if len(username) == 0 {
 		http.Error(w, "missing 'username' query parameter", http.StatusBadRequest)
 		return
