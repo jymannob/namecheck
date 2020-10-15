@@ -5,10 +5,13 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"sync/atomic"
 
 	"github.com/jub0bs/namecheck"
 	_ "github.com/jub0bs/namecheck/github"
 )
+
+var count uint64
 
 type result struct {
 	username  string
@@ -19,13 +22,23 @@ type result struct {
 }
 
 func main() {
-	http.Handle("/", http.HandlerFunc(handle))
+	http.Handle("/check", http.HandlerFunc(handle))
+	http.Handle("/count", http.HandlerFunc(handleCount))
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
+func handleCount(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "text/plain")
+	msg := fmt.Sprintf("%d", atomic.LoadUint64(&count))
+	fmt.Fprintf(w, msg)
 }
 
 func handle(w http.ResponseWriter, r *http.Request) {
+	atomic.AddUint64(&count, 1)
 	w.Header().Add("Content-Type", "text/plain")
 	username := r.URL.Query().Get("username")
 	if len(username) == 0 {
@@ -43,8 +56,8 @@ func handle(w http.ResponseWriter, r *http.Request) {
 		wg.Wait()
 		close(ch)
 	}()
-	for r := range ch {
-		fmt.Fprintf(w, "%+v\n", r)
+	for res := range ch {
+		fmt.Fprintf(w, "%+v\n", res)
 	}
 }
 
@@ -54,26 +67,26 @@ func check(
 	wg *sync.WaitGroup,
 	ch chan<- result) {
 	defer wg.Done()
-	r := result{
+	res := result{
 		username: username,
 		platform: c.String(),
 	}
 	valid := c.IsValid(username)
 	if !valid {
-		ch <- r
+		ch <- res
 		return
 	}
-	r.valid = true
+	res.valid = true
 	avail, err := c.IsAvailable(username)
 	if err != nil {
-		r.err = err
-		ch <- r
+		res.err = err
+		ch <- res
 		return
 	}
 	if !avail {
-		ch <- r
+		ch <- res
 		return
 	}
-	r.available = true
-	ch <- r
+	res.available = true
+	ch <- res
 }
