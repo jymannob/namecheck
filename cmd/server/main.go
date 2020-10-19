@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,14 +10,14 @@ import (
 
 	"github.com/jub0bs/namecheck"
 	_ "github.com/jub0bs/namecheck/github"
+	_ "github.com/jub0bs/namecheck/twitter"
 )
 
 var count uint64
 var m = make(map[string]uint64)
 var mu sync.Mutex
 
-type result struct {
-	username  string
+type Result struct {
 	platform  string
 	valid     bool
 	available bool
@@ -35,25 +36,35 @@ func main() {
 }
 
 func handleCount(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/plain")
-	msg := fmt.Sprintf("%d", atomic.LoadUint64(&count))
-	fmt.Fprintf(w, msg)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	entity := struct {
+		Count uint64 `json:"count"`
+	}{
+		Count: atomic.LoadUint64(&count),
+	}
+	dec := json.NewEncoder(w)
+	if err := dec.Encode(entity); err != nil {
+		http.Error(w, "{}", http.StatusInternalServerError)
+		return
+	}
 }
 
 func handleDetails(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/plain")
-	var msg string
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	dec := json.NewEncoder(w)
 	mu.Lock()
 	{
-		msg = fmt.Sprintf("%v", m)
+		if err := dec.Encode(m); err != nil {
+			http.Error(w, "{}", http.StatusInternalServerError)
+			return
+		}
 	}
 	mu.Unlock()
-	fmt.Fprintf(w, msg)
 }
 
 func handle(w http.ResponseWriter, r *http.Request) {
 	atomic.AddUint64(&count, 1)
-	w.Header().Add("Content-Type", "text/plain")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	username := r.URL.Query().Get("username")
 	mu.Lock()
 	{
@@ -61,10 +72,10 @@ func handle(w http.ResponseWriter, r *http.Request) {
 	}
 	mu.Unlock()
 	if len(username) == 0 {
-		http.Error(w, "missing 'username' query parameter", http.StatusBadRequest)
+		http.Error(w, "missing 'username' query parameter", http.StatusInternalServerError)
 		return
 	}
-	ch := make(chan result)
+	ch := make(chan Result)
 	var wg sync.WaitGroup
 	checkers := namecheck.Checkers()
 	wg.Add(len(checkers))
@@ -75,8 +86,31 @@ func handle(w http.ResponseWriter, r *http.Request) {
 		wg.Wait()
 		close(ch)
 	}()
-	for res := range ch {
-		fmt.Fprintf(w, "%+v\n", res)
+	type jsonResult struct {
+		Platform  string `json:"platform"`
+		Valid     string `json:"valid"`
+		Available string `json:"available"`
+	}
+	jsonResults := make([]jsonResult, 0, len(checkers))
+	for result := range ch {
+		res := jsonResult{
+			Platform:  result.platform,
+			Valid:     fmt.Sprintf("%t", result.valid),
+			Available: availabilityStatus(result),
+		}
+		jsonResults = append(jsonResults, res)
+	}
+	entity := struct {
+		Username string       `json:"username"`
+		Results  []jsonResult `json:"results"`
+	}{
+		Username: username,
+		Results:  jsonResults,
+	}
+	dec := json.NewEncoder(w)
+	if err := dec.Encode(entity); err != nil {
+		http.Error(w, "{}", http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -84,10 +118,9 @@ func check(
 	c namecheck.Checker,
 	username string,
 	wg *sync.WaitGroup,
-	ch chan<- result) {
+	ch chan<- Result) {
 	defer wg.Done()
-	res := result{
-		username: username,
+	res := Result{
 		platform: c.String(),
 	}
 	valid := c.IsValid(username)
@@ -108,4 +141,11 @@ func check(
 	}
 	res.available = true
 	ch <- res
+}
+
+func availabilityStatus(res Result) string {
+	if res.err != nil {
+		return "unknown"
+	}
+	return fmt.Sprintf("%t", res.available)
 }
