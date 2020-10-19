@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/jub0bs/namecheck"
 )
 
 const (
@@ -16,6 +18,14 @@ const (
 var legalRegexp = regexp.MustCompile("^[0-9A-Z_a-z]*$")
 
 type Twitter struct{}
+
+func init() {
+	gh := Twitter{}
+	const count = 20
+	for i := 0; i < count; i++ {
+		namecheck.Register(&gh)
+	}
+}
 
 func (t *Twitter) IsValid(username string) bool {
 	return isLongEnough(username) &&
