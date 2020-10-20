@@ -1,6 +1,7 @@
 package twitter
 
 import (
+	"net/http"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -17,7 +18,16 @@ const (
 
 var legalRegexp = regexp.MustCompile("^[0-9A-Z_a-z]*$")
 
-type Twitter struct{}
+type Twitter struct {
+	Client namecheck.Client
+}
+
+func init() {
+	gh := Twitter{
+		Client: http.DefaultClient,
+	}
+	namecheck.Register(&gh)
+}
 
 func init() {
 	gh := Twitter{}

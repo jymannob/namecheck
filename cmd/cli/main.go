@@ -6,7 +6,9 @@ import (
 	"sync"
 
 	"github.com/jub0bs/namecheck"
+	_ "github.com/jub0bs/namecheck/facebook"
 	_ "github.com/jub0bs/namecheck/github"
+	_ "github.com/jub0bs/namecheck/instagram"
 )
 
 type result struct {
