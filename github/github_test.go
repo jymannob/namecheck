@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jub0bs/namecheck"
-	"github.com/jub0bs/namecheck/mockclient"
+	"github.com/jymannob/namecheck"
+	"github.com/jymannob/namecheck/mockclient"
 )
 
 var (

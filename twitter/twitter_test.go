@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jub0bs/namecheck"
+	"github.com/jymannob/namecheck"
 )
 
 var (

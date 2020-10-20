@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/jub0bs/namecheck"
+	"github.com/jymannob/namecheck"
 )
 
 type clientFunc func(url string) (*http.Response, error)

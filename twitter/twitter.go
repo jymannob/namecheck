@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/jub0bs/namecheck"
+	"github.com/jymannob/namecheck"
 )
 
 const (

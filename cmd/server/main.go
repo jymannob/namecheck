@@ -13,10 +13,10 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/jub0bs/namecheck"
-	_ "github.com/jub0bs/namecheck/facebook"
-	_ "github.com/jub0bs/namecheck/github"
-	_ "github.com/jub0bs/namecheck/twitter"
+	"github.com/jymannob/namecheck"
+	_ "github.com/jymannob/namecheck/facebook"
+	_ "github.com/jymannob/namecheck/github"
+	_ "github.com/jymannob/namecheck/twitter"
 )
 
 var count uint64
