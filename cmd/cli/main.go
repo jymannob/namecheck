@@ -9,6 +9,7 @@ import (
 	_ "github.com/jymannob/namecheck/facebook"
 	_ "github.com/jymannob/namecheck/github"
 	_ "github.com/jymannob/namecheck/instagram"
+	_ "github.com/jymannob/namecheck/twitter"
 )
 
 type result struct {
