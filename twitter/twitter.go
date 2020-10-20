@@ -29,14 +29,6 @@ func init() {
 	namecheck.Register(&gh)
 }
 
-func init() {
-	gh := Twitter{}
-	const count = 20
-	for i := 0; i < count; i++ {
-		namecheck.Register(&gh)
-	}
-}
-
 func (t *Twitter) IsValid(username string) bool {
 	return isLongEnough(username) &&
 		isShortEnough(username) &&
