@@ -37,9 +37,9 @@ func main() {
 	signal.Notify(signals, os.Kill, os.Interrupt)
 	go func() {
 		<-signals
+		fmt.Println("[signals] Interupt !")
 		// write detail in json file
 		writeDetailInfile()
-		fmt.Println("[signals] Interupt !")
 		os.Exit(0)
 	}()
 	//Load detail from json file
@@ -172,20 +172,22 @@ func availabilityStatus(res Result) string {
 }
 
 func writeDetailInfile() {
+	f, err := os.OpenFile("detail.json", os.O_WRONLY|os.O_CREATE, 0755)
+	if err != nil {
+		log.Println("Impossible d'écrire dans le fichier : detail.json")
+		return
+	}
+	defer f.Close()
+	enc := json.NewEncoder(f)
+
 	mu.Lock()
-	jsonData, err := json.Marshal(m)
+	{
+		if err := enc.Encode(m); err != nil {
+			log.Println("Impossible de convertir en Json")
+			return
+		}
+	}
 	mu.Unlock()
-
-	if err != nil {
-		fmt.Println("Impossible de convertir en Json")
-		return
-	}
-
-	err = ioutil.WriteFile("detail.json", jsonData, 0644)
-	if err != nil {
-		fmt.Println("Impossible d'écrire dans le fichier : detail.json")
-		return
-	}
 }
 
 func loadDetailFromfile() {
